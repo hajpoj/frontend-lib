@@ -20,6 +20,12 @@ FrontendLib::Application.configure do
   # Generate digests for assets URLs
   config.assets.digest = true
 
+
+  config.assets.js_compressor = Sprockets::LazyCompressor.new do
+    Uglifier.new(mangle: false) #don't obliterate name. for angularjs
+  end
+
+
   # Defaults to nil and saved in location specified by config.assets.prefix
   # config.assets.manifest = YOUR_PATH
 
