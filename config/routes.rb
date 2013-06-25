@@ -3,6 +3,7 @@ FrontendLib::Application.routes.draw do
 
   get 'angular' => 'angular#index'
   get 'angular/contacts' => 'angular#contacts'
+  get 'angular/ngResource'
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

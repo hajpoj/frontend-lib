@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app>
+<html ng-app="ContactsApp">
 <head>
   <title>FrontendLib</title>
   <%= stylesheet_link_tag    'application', :media => 'all' %>
@@ -7,14 +7,44 @@
   <%= javascript_include_tag 'application' %>
   <%= javascript_include_tag 'angular' %>
   <%= javascript_include_tag 'angular-resource' %>
-  <%= javascript_include_tag 'angular/index' %>
+  <%= javascript_include_tag 'underscore' %>
+  <%= javascript_include_tag 'angular/contacts' %>
   <%= csrf_meta_tags %>
 </head>
 <body>
-
-<div>
-contacts
+<div class="container">
+  <div class="content" ng-view>
+  </div>
 </div>
+
+<script id="listTemplate" type="text/ng-template">
+  <h1>{{ title }}</h1>
+    <div class="contacts-container">
+      <div ng-repeat="contact in contacts">
+        <h4>{{contact.last_name}}, {{contact.first_name}}</h4>
+        <p>Age: {{contact.age}}, Type: {{contact.contact_type}}</p>
+        <a href='#/edit/{{contact.id}}'>Edit</a>
+      </div>
+    </div>
+  <button class="btn" ng-click="new()">New Contact</button>
+</script>
+
+
+<script id="newTemplate" type="text/ng-template">
+  <h1>{{title}}</h1>
+
+  <label>First Name</label>
+  <input type="text" name="first_name" ng-model="contact.first_name">
+  <label>Last Name</label>
+  <input type="text" name="last_name" ng-model="contact.last_name">
+  <label>Type</label>
+  <input type="text" name="contact_type" ng-model="contact.contact_type">
+  <label>Age</label>
+  <input type="text" name="age" ng-model="contact.age">
+  <label>Active</label>
+  <input type="checkbox" name="active" ng-model="contact.active">
+  <button ng-click="create()">Create</button>
+</script>
 
 </body>
 </html>
