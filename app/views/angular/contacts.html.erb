@@ -13,26 +13,30 @@
 </head>
 <body>
 <div class="container">
-  <div class="content" ng-view>
+  <div class="row">
+    <div class="span3" ng-controller="ContactsCtrl">
+      <h1>{{ title }}</h1>
+      <button class="btn" ng-click="new()">New Contact</button>
+      <input type="text" ng-model="query.input" >
+      <ul class="nav nav-tabs nav-stacked">
+        <li ng-repeat="contact in contacts | filter:search" ng-click="view(contact)">
+          <a href="">{{contact.last_name}}, {{contact.first_name}}</a>
+        </li>
+      </ul>
+    </div>
+    <div class="span9" ng-view>
+    </div>
   </div>
 </div>
 
-<script id="listTemplate" type="text/ng-template">
-  <h1>{{ title }}</h1>
-    <div class="contacts-container">
-      <div ng-repeat="contact in contacts">
-        <h4>{{contact.last_name}}, {{contact.first_name}}</h4>
-        <p>Age: {{contact.age}}, Type: {{contact.contact_type}}</p>
-        <a href='#/edit/{{contact.id}}'>Edit</a>
-      </div>
-    </div>
-  <button class="btn" ng-click="new()">New Contact</button>
+
+
+<script id="blankTemplate" type="text/ng-template">
+  There aint nothing here
 </script>
 
-
-<script id="newTemplate" type="text/ng-template">
-  <h1>{{title}}</h1>
-
+<script id="editTemplate" type="text/ng-template">
+  <h1>{{props.title}}</h1>
   <label>First Name</label>
   <input type="text" name="first_name" ng-model="contact.first_name">
   <label>Last Name</label>
@@ -43,7 +47,18 @@
   <input type="text" name="age" ng-model="contact.age">
   <label>Active</label>
   <input type="checkbox" name="active" ng-model="contact.active">
-  <button ng-click="create()">Create</button>
+  <hr>
+  <button class="btn btn-primary" ng-click="save()">{{ props.saveBtnName }}</button>
+  <a ng-href="#/{{ contact.id }}">Cancel</a>
+
+</script>
+
+<script id="viewTemplate" type="text/ng-template">
+  <h4>{{contact.last_name}}, {{contact.first_name}}</h4>
+  <p>Age: {{contact.age}}</p>
+  <p>Type: {{contact.contact_type}}</p>
+  <a ng-href='#/{{contact.id}}/edit'>Edit</a>
+  <a href="" ng-click="delete()">Delete</a>
 </script>
 
 </body>

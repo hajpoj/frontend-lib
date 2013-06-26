@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+  <title>FrontendLib</title>
+  <%= stylesheet_link_tag    'application', :media => 'all' %>
+  <%= csrf_meta_tags %>
+</head>
+<body ng-controller="DirectiveCtrl">
+
+<h3>Basic Directive</h3>
+<div basic>this is basic. click me</div>
+
+<h3>Pollute</h3>
+<p> you can see here that even though they are different directives they are updating the same ng-model</p>
+<div no-scope></div>
+<div no-scope></div>
+
+<h3>Isolate Scope</h3>
+<p>here the scope of each directive is isolated so they dont interfere with each other </p>
+<div with-scope></div>
+<div with-scope></div>
+
+<h3>Different Scope</h3>
+<p>oneway: </p>
+<input type="text" ng-model="oneWay">
+<p>twoway: </p>
+<input type="text" ng-model="twoWay">
+<br><br>
+<different-scope one-way="{{ oneWay }}" two-way="twoWay" execute="alertFunc(message)"></different-scope>
+
+
+<%= javascript_include_tag 'application' %>
+<%= javascript_include_tag 'angular' %>
+<%= javascript_include_tag 'angular-resource' %>
+<%= javascript_include_tag 'underscore' %>
+<script>
+    var app = angular.module('myApp', []);
+
+    app.controller("DirectiveCtrl", function($scope) {
+        $scope.oneWay = "this is one way";
+        $scope.twoWay = "twoway";
+        $scope.alertFunc = function(message) {
+            alert(message);
+        }
+    });
+
+    // this is the full form of a directive definition. Haven't learned everything yet.
+    // important ones ive seen are scope, restrict, template, link
+    app.directive("full", function(injectables) {
+        var directiveObj = {
+            priority: 0,
+            template: '<div></div>',
+            templateUrl: 'directive.html',
+            replace: false,
+            transclude: false,
+            restrict: 'A',
+            scope: false,
+            controller: function(scope, element, attrs, transclude, otherInjectables) {},
+            compile: function compile(tElement, tAttrs, transclude) {
+                return {
+                    pre: function preLink(scope, iElement, iAttrs, controller) {},
+                    post: function postLink(scope, iElement, iAttrs, controller) {}
+                }
+            },
+            link: function postLink(scope, iElement, iAttrs) {}
+        };
+
+        return directiveObj;
+    });
+
+    // the short form of a directive. Only has the link function)
+    app.directive("short", function(injectables) {
+       return function(scope, iElement, iAttrs) { };
+    });
+
+
+    app.directive("basic", function() {
+
+        var isRed = false;
+
+       return function(scope, iElement, iAttrs) {
+           console.log("basic directive arguments:");
+           console.log(arguments);
+
+           iElement.bind('click', function() {
+               if(isRed) {
+                   iElement.css('background-color', 'green');
+                   isRed = false;
+
+               }
+               else {
+                   iElement.css('background-color', 'red');
+                   isRed = true;
+               }
+           });
+       }
+    });
+
+
+    /***********************
+     * Scope
+     */
+
+
+    // directive with no local scope. this will "pollute the parent scope". probably should avoid.
+    app.directive('noScope', function() {
+        return {
+            restrict: 'A',
+            template: "<input type='text' ng-model='pollute'> {{ pollute }}"
+        }
+    });
+
+
+    // a directive with isolate scope
+    app.directive('withScope', function() {
+        return {
+            restrict: 'A',
+            scope: {},
+            template: "<input type='text' ng-model='pollute'> {{ pollute }}"
+        }
+    });
+
+    // the different scope values you can assign to "variables" passed into the function
+    app.directive('differentScope', function() {
+
+       return {
+           restrict: 'E',
+           scope: {
+               oneWay: "@", //evaluate as string.
+               twoWay: "=", // can bind to something outside the scope of the directive
+               execute: "&" //invoke function
+           },
+           template: "<h5>one way binding</h5>" +  "<div>{{ oneWay }}</div>" + "<input type='text' ng-model='oneWay'>"
+                + "<h5>bind to outside</h5>" + "<div>{{ twoWay }}</div>" + "<input type='text' ng-model='twoWay'>"
+                + "<h5>invoke func</h5>" + "<input ng-model='value'>" + "<button class='btn' ng-click='execute({message: value})'>Press me</button>"
+       }
+    });
+
+
+    /*
+    Notes:
+
+    Notice that when we use camel case when naming directives like "noScope" that
+     gets translated as "no-scope" on the html side of things
+
+     */
+
+    var fix = "";
+</script>
+</body>
+</html>

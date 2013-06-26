@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+  <title>FrontendLib</title>
+  <%= stylesheet_link_tag    'application', :media => 'all' %>
+  <%= csrf_meta_tags %>
+</head>
+<body ng-controller="PromiseCtrl">
+
+<h3>The promised one:</h3>
+<div>{{ name }}</div>
+<div>{{ name2 }}</div>
+
+<h3>Waiting for all</h3>
+<div>{{ all }}</div>
+<h3>Set up promise AFTER its been completed</h3>
+<div>{{ after }}</div>
+
+
+<%= javascript_include_tag 'application' %>
+<%= javascript_include_tag 'angular' %>
+<%= javascript_include_tag 'angular-resource' %>
+<%= javascript_include_tag 'underscore' %>
+<script type="text/javascript">
+    var app = angular.module('myApp', [])
+
+
+    app.factory("Data2", function($q, $timeout) {
+
+        var d1 = $q.defer();
+        var d2 = $q.defer();
+
+        var promise = $q.all([d1.promise, d2.promise]);
+
+        $timeout(function() {
+            d1.resolve("success1");
+            console.log("d1");
+        }, 1000);
+
+        $timeout(function() {
+            d2.resolve("success2");
+//            d2.reject("Rejected cuz i want to");
+            console.log("d2");
+        }, 3000);
+
+       return {
+           get: function() {
+               var deferred = $q.defer();
+               $timeout(function() {
+                   deferred.resolve({name: "big daddy"});
+               }, 1000);
+               return deferred.promise;
+           },
+           getFail: function() {
+               var deferred = $q.defer();
+               $timeout(function() {
+                   deferred.reject("something went wrong");
+               }, 2000);
+               return deferred.promise;
+           },
+           getAll: function() {
+               return promise;
+           }
+       };
+    });
+
+    app.controller("PromiseCtrl", function($scope, Data2, $timeout) {
+        var data = Data2.get(),
+            data2 = Data2.getFail(),
+            data3 = Data2.getAll();
+
+        $scope.name = "waiting...";
+        data.then(function(data) {
+            $scope.name = data.name;
+        });
+
+        $scope.name2 = "waiting...";
+        data2.then(function(data) {
+            $scope.name2 = "good things";
+        }, function(message) {
+            $scope.name2 = message;
+        });
+
+        // wait for multiple promises to return
+
+        $scope.all = "waiting...";
+        data3.then(function(data) {
+            $scope.all = data;
+            console.log(data);
+        }, function(message) {
+            $scope.all = message;
+        });
+
+        $scope.after = "waiting...";
+        $timeout(function() {
+            // get/setup promise after it complete /
+
+            // still works: promise remembers that it completed
+            var data4 = Data2.getAll();
+            data4.then(function(data) {
+                $scope.after = data;
+            });
+        },3500);
+    });
+
+    var fix = "";
+</script>
+</body>
+</html>

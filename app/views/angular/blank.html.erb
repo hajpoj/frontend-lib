@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+  <title>FrontendLib</title>
+  <%= stylesheet_link_tag    'application', :media => 'all' %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+
+<%= javascript_include_tag 'application' %>
+<%= javascript_include_tag 'angular' %>
+<%= javascript_include_tag 'angular-resource' %>
+<%= javascript_include_tag 'underscore' %>
+<script>
+    var app = angular.module('myApp', []);
+
+
+    var fix = "";
+</script>
+</body>
+</html>
