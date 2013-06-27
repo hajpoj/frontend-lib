@@ -19,7 +19,6 @@
 //        $scope.title = "a title";
 //    });
 
-
 /*
 ajax loading module.
  */
@@ -66,7 +65,7 @@ ajaxLoading.factory('myHttpInterceptor', function ($q, $rootScope) {
 
 var app = angular.module('ContactsApp', ['ajaxLoading', 'ngResource']);
 
-app.config(function($routeProvider, $httpProvider) {
+app.config(function($routeProvider) {
     $routeProvider
         .when('/', {
             templateUrl: "blankTemplate"
@@ -121,21 +120,32 @@ app.factory('ContactService', function($q, ContactResource){
         },
 
         save: function(contact) {
+            var deferred = $q.defer();
+
             contact.$save(function(data) {
                 contacts.push(data);
+                deferred.resolve(data);
             });
+            return deferred.promise;
         },
+
         update: function(contact) {
+            var deferred = $q.defer();
+
             contact.$update(function(data) {
                 var toUpdate = _.find(contacts, function(elem) {
                     return elem.id === data.id;
                 });
                 angular.copy(data, toUpdate);
+                deferred.resolve(data);
             });
+            return deferred.promise;
         },
-        delete: function(contact) {
-            contact.$remove(function(data) {
 
+        delete: function(contact) {
+            var deferred = $q.defer();
+
+            contact.$remove(function(data) {
                 // remove item from object
                 var objIndex = -1;
                 for(var i = 0; i < contacts.length; i++) {
@@ -147,7 +157,9 @@ app.factory('ContactService', function($q, ContactResource){
                 if(objIndex >= 0) {
                     contacts.splice(objIndex, 1);
                 }
+                deferred.resolve(data);
             });
+            return deferred.promise;
         }
     }
 });
@@ -190,13 +202,20 @@ app.controller('ContactsViewCtrl', function($scope, $location, $routeParams, Con
 
     var promise =  ContactService.get(id);
     promise.then(function(contact) {
-        $scope.contact = contact;
+        if(contact) {
+            $scope.contact = contact;
+        }
+        else {
+            $location.path('/');
+        }
     });
 
     $scope.delete = function() {
         if(confirm("Are you sure you want to delete this contact?")) {
-            ContactService.delete($scope.contact);
-            $location.path('/');
+            var promise = ContactService.delete($scope.contact);
+            promise.then(function(contact) {
+                $location.path('/');
+            });
         }
     }
 });
@@ -210,13 +229,15 @@ app.controller('ContactsNewCtrl', function($scope, $location, ContactService) {
     $scope.contact = ContactService.new();
 
     $scope.save = function() {
-        ContactService.save($scope.contact);
-        $location.path('/');
+        var promise = ContactService.save($scope.contact);
+        promise.then(function(contact) {
+            $location.path('/' + contact.id);
+        });
     }
 });
 
 
-app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, ContactService, $timeout) {
+app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, ContactService) {
     var id = parseInt($routeParams.id);
     $scope.props = {};
     $scope.props.title = "Edit Contact";
@@ -229,8 +250,10 @@ app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, Con
     });
 
     $scope.save = function() {
-        ContactService.update($scope.contact);
-        $location.path('/'+ id);
+        var promise = ContactService.update($scope.contact);
+        promise.then(function(contact) {
+            $location.path('/' + contact.id);
+        });
     }
 });
 
