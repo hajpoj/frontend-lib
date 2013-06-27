@@ -12,6 +12,9 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
+
+<div id="loading" ng-show="ajaxLoading.show()">Loading...</div>
+
 <div class="container">
   <div class="row">
     <div class="span3" ng-controller="ContactsCtrl">
@@ -28,8 +31,6 @@
     </div>
   </div>
 </div>
-
-
 
 <script id="blankTemplate" type="text/ng-template">
   There aint nothing here

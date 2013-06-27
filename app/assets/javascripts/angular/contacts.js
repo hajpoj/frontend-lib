@@ -20,9 +20,53 @@
 //    });
 
 
-var app = angular.module('ContactsApp', ['ngResource']);
+/*
+ajax loading module.
+ */
+var ajaxLoading = angular.module('ajaxLoading', []);
+ajaxLoading.config(function($httpProvider) {
+    $httpProvider.responseInterceptors.push('myHttpInterceptor');
+});
+ajaxLoading.run(function($http, $rootScope) {
+    // if you set the templateUrl as a local template on the page, the $http service
+    // still registers it as an an ajax call. so have to account for that.
+    //http://jsfiddle.net/dBR2r/©/
+    //https://groups.google.com/forum/#!topic/angular/BbZ7lQgd1GI
 
-app.config(function($routeProvider) {
+    //set up http request counts
+    $rootScope.ajaxLoading = {
+        count: 0
+    };
+    $rootScope.ajaxLoading.show = function() {
+        return $rootScope.ajaxLoading.count > 0;
+    };
+
+    var spinnerFunction = function (data) {
+        $rootScope.ajaxLoading.count++;
+        return data;
+    };
+    $http.defaults.transformRequest.push(spinnerFunction);
+});
+
+
+// register the interceptor as a service, intercepts ALL angular ajax http calls
+ajaxLoading.factory('myHttpInterceptor', function ($q, $rootScope) {
+    return function (promise) {
+        return promise.then(function (response) {
+            $rootScope.ajaxLoading.count--;
+            return response;
+
+        }, function (response) {
+            $rootScope.ajaxLoading.count--;
+            return $q.reject(response);
+        });
+    };
+});
+
+
+var app = angular.module('ContactsApp', ['ajaxLoading', 'ngResource']);
+
+app.config(function($routeProvider, $httpProvider) {
     $routeProvider
         .when('/', {
             templateUrl: "blankTemplate"
@@ -38,7 +82,7 @@ app.config(function($routeProvider) {
         .when('/:id/edit', {
             templateUrl: 'editTemplate',
             controller: 'ContactsEditCtrl'
-        })
+        });
 });
 
 
@@ -48,9 +92,12 @@ app.factory('ContactResource', function($resource) {
 });
 
 app.factory('ContactService', function($q, ContactResource){
+    console.log('contact Service loaded');
+
 
     var deferred = $q.defer(),
         promise = deferred.promise;
+
 
     var contacts = ContactResource.query(function() {
         deferred.resolve(contacts);
@@ -87,7 +134,6 @@ app.factory('ContactService', function($q, ContactResource){
             });
         },
         delete: function(contact) {
-            console.log(contact);
             contact.$remove(function(data) {
 
                 // remove item from object
@@ -129,7 +175,6 @@ app.controller('ContactsCtrl', function($scope, $location, ContactService) {
     };
 
     $scope.new = function() {
-        console.log('clicked!');
         $location.path('/new');
     };
 
@@ -210,4 +255,13 @@ app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, Con
 
     but in reality this only works if you are DISPLAYING THE DATA. if you are trying to EDIT the data,
     This doesn't work. I dont know why though.
+
+
+    Another note:
+
+    Services are not instantiated until there is a dependency. i.e. if you have a controller with an dependency
+    on ContactsResource, and that controller is loaded, then ContactsResource is instantiated. If you have a controller,
+    without a dependency on ContactsResource, then ContactsResource isn't instantiated, until say a different controller,
+    that has a dependency on it is loaded. Basically Service's are lazy instantiated.
+
  */
