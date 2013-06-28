@@ -257,6 +257,8 @@ app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, Con
     }
 });
 
+
+
 /*
     BIG NOTE:
     if you set a promise to the $scope, it knows how to deal with it how you would expect! (ACTUALLY NOT READ BELOW)

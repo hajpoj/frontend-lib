@@ -22,7 +22,7 @@
       <button class="btn" ng-click="new()">New Contact</button>
       <input type="text" ng-model="query.input" >
       <ul class="nav nav-tabs nav-stacked">
-        <li ng-repeat="contact in contacts | filter:search" ng-click="view(contact)">
+        <li ng-repeat="contact in contacts | filter:search | orderBy:'last_name'" ng-click="view(contact)">
           <a href="">{{contact.last_name}}, {{contact.first_name}}</a>
         </li>
       </ul>
