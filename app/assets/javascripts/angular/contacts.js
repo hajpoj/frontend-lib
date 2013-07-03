@@ -19,6 +19,7 @@
 //        $scope.title = "a title";
 //    });
 
+
 /*
 ajax loading module.
  */
@@ -84,13 +85,39 @@ app.config(function($routeProvider) {
         });
 });
 
+// Flash service requires toastr.
+
+app.factory('FlashService', function($rootScope) {
+    var queue =[], currentMessage = {};
+    var obj = {
+        set: function(message) {
+        queue.push(message);
+    },
+        get: function(message) {
+        return currentMessage;
+    },
+        pop: function(message) {
+            //toastr types are 'success', 'info', 'warning', 'error'
+            if(currentMessage.body) {
+                toastr[message.type](message.body, message.title);
+            }
+        }
+    };
+
+    $rootScope.$on('$routeChangeSuccess', function() {
+        currentMessage = queue.length > 0 ? queue.shift() : {};
+        obj.pop(currentMessage);
+    });
+    return obj;
+});
+
 
 app.factory('ContactResource', function($resource) {
    var ContactResource = $resource('/contacts/:id', {id: '@id'}, {update: {method: 'PUT'}});
     return ContactResource;
 });
 
-app.factory('ContactService', function($q, ContactResource){
+app.factory('ContactService', function($q, ContactResource, FlashService){
     console.log('contact Service loaded');
 
 
@@ -126,6 +153,10 @@ app.factory('ContactService', function($q, ContactResource){
                 contacts.push(data);
                 deferred.resolve(data);
             });
+            FlashService.set({
+                type: 'success',
+                body: 'contact was created!'
+            });
             return deferred.promise;
         },
 
@@ -137,7 +168,12 @@ app.factory('ContactService', function($q, ContactResource){
                     return elem.id === data.id;
                 });
                 angular.copy(data, toUpdate);
+                FlashService.set({
+                    type: 'success',
+                    body: 'contact was updated!'
+                });
                 deferred.resolve(data);
+
             });
             return deferred.promise;
         },
@@ -157,6 +193,11 @@ app.factory('ContactService', function($q, ContactResource){
                 if(objIndex >= 0) {
                     contacts.splice(objIndex, 1);
                 }
+
+                FlashService.set({
+                    type: 'success',
+                    body: 'contact was deleted!'
+                });
                 deferred.resolve(data);
             });
             return deferred.promise;
