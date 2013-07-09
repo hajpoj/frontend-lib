@@ -1,11 +1,15 @@
 FrontendLib::Application.routes.draw do
   resources :contacts
+  resources :contacts2
 
   get 'angular' => 'angular#index'
   get 'angular/contacts' => 'angular#contacts'
   get 'angular/ngResource'
   get 'angular/directives'
   get 'angular/promise'
+
+  get 'ember' => 'ember#index'
+  get 'ember/contacts'
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

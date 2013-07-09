@@ -6,7 +6,7 @@ class ContactsController < ApplicationController
 
     respond_to do |format|
       format.html # index.html.erb
-      format.json { render json: @contacts }
+      format.json { render json: @contacts.to_json }
     end
   end
 
@@ -17,7 +17,7 @@ class ContactsController < ApplicationController
 
     respond_to do |format|
       format.html # show.html.erb
-      format.json { render json: @contact }
+      format.json { render json: @contact.to_json }
     end
   end
 
@@ -28,7 +28,7 @@ class ContactsController < ApplicationController
 
     respond_to do |format|
       format.html # new.html.erb
-      format.json { render json: @contact }
+      format.json { render json: @contact.to_json }
     end
   end
 
@@ -45,7 +45,7 @@ class ContactsController < ApplicationController
     respond_to do |format|
       if @contact.save
         format.html { redirect_to @contact, notice: 'Contact was successfully created.' }
-        format.json { render json: @contact, status: :created, location: @contact }
+        format.json { render json: @contact.to_json, status: :created, location: @contact }
       else
         format.html { render action: "new" }
         format.json { render json: @contact.errors, status: :unprocessable_entity }

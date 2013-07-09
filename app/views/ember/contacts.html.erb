@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FrontendLib</title>
+  <%= stylesheet_link_tag    'application', :media => 'all' %>
+
+  <%= javascript_include_tag 'application' %>
+  <%= javascript_include_tag 'handlebars-1.0.0-rc.4.js' %>
+  <%= javascript_include_tag 'ember-1.0.0-rc.6' %>
+  <%= javascript_include_tag 'ember-data-latest' %>
+
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+
+<!-- can use: "data-template-name" or "id" both work in this case-->
+<script type="text/x-handlebars" id="index">
+  <div class="row">
+    <div class="span3" >
+      <h1>{{ title }}</h1>
+      <button class="btn">New Contact</button>
+      <input type="text">
+      <ul class="nav nav-tabs nav-stacked">
+        {{#each controller }}
+            <li>
+              <a href="">{{lastName}}, {{firstName}}</a>
+            </li>
+        {{/each }}
+      </ul>
+    </div>
+    <div class="span9">
+    </div>
+  </div>
+</script>
+
+<script type="text/javascript">
+    var App = Ember.Application.create();
+
+    // Rails default scaffolded json doesn't return obj's in the correct format. But using
+    // ember.js
+    DS.RESTAdapter.configure("plurals", {
+        contact: "contacts2"
+    });
+
+    App.Store = DS.Store.extend();
+
+    App.Contact = DS.Model.extend({
+        firstName: DS.attr('string'),
+        lastName: DS.attr('string'),
+        contactType: DS.attr('string'),
+        active: DS.attr('boolean'),
+        age: DS.attr('number')
+    });
+
+    // not necessary code. If things aren't defined then ember will auto generate it for you
+    App.Router.map(function() {});
+
+    App.IndexRoute = Ember.Route.extend({
+        model: function() {
+            return App.Contact.find();
+        }
+    });
+
+    App.IndexController = Ember.ArrayController.extend({
+
+    });
+
+    // use this function to execute some code immediately after the Ember app loads.
+    App.then(function() {
+        console.log("App - initialized");
+        var contacts = App.Contact.find();
+        window.contacts = contacts;
+        // this won't be an object until after the ajax call returns. contacts is a blank obj until then.
+        console.log(contacts.objectAt(0));
+    });
+
+
+    var x = "";
+
+        /*
+        Notes:
+
+        Why you cant just call App.Contact.find() from the global scope
+         https://github.com/emberjs/ember.js/issues/2275
+
+         http://emberjs.com/guides/models/the-rest-adapter/
+         Using the rest adapter you need to return the data in a certain form (not the default like in Rails
+         */
+</script>
+</body>
+</html>

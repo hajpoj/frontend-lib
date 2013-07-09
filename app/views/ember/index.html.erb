@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FrontendLib</title>
+  <%= stylesheet_link_tag    'application', :media => 'all' %>
+
+  <%= javascript_include_tag 'application' %>
+  <%= javascript_include_tag 'handlebars-1.0.0-rc.4.js' %>
+  <%= javascript_include_tag 'ember-1.0.0-rc.6' %>
+
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+<script type="text/x-handlebars" id="index">
+  <h1>People</h1>
+  <ul>
+    {{#each model }}
+    <li>Hello, <b>{{ fullName }}</b>!</li>
+    {{/each }}
+  </ul>
+</script>
+
+<script type="text/javascript">
+
+    App = Ember.Application.create();
+
+    App.Person = Ember.Object.extend({
+        firstName: null,
+        lastName: null,
+
+        fullName: function() {
+            return this.get('firstName') +
+                    " " + this.get('lastName');
+        }.property('firstName', 'lastName') // i believe this is for data binding. Listening to firstName and LastName
+    });
+    App.Person.reopen({
+        age: 24,
+        agePlusOne: function() { return this.get("age") + 1; }
+    });
+
+
+    App.IndexRoute = Ember.Route.extend({
+        model: function() {
+            var people = [
+                App.Person.create({
+                    firstName: "Tom",
+                    lastName: "Dale"
+                }),
+                App.Person.create({
+                    firstName: "Yehuda",
+                    lastName: "Katz"
+                })
+            ];
+            window.people = people;
+            return people;
+        }
+    });
+
+
+        var x = "";
+
+    /*
+    * Here the notation is more similar to Backbone where you have to extend Ember Objects.
+    * In angular you don't have to do that.
+    * I'm interested in seeing how routing works.
+    *
+    * Not as important but you can reopen an ember object and made modifications to it.
+    * All new objects that are there.
+    *
+     */
+</script>
+</body>
+</html>

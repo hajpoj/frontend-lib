@@ -13,6 +13,7 @@ group :production do
 end
 
 gem "twitter-bootstrap-rails"
+gem "active_model_serializers"
 
 # Gems used only for assets and not required
 # in production environments by default.

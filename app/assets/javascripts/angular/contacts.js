@@ -322,12 +322,10 @@ app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, Con
     but in reality this only works if you are DISPLAYING THE DATA. if you are trying to EDIT the data,
     This doesn't work. I dont know why though.
 
-
     Another note:
 
     Services are not instantiated until there is a dependency. i.e. if you have a controller with an dependency
     on ContactsResource, and that controller is loaded, then ContactsResource is instantiated. If you have a controller,
     without a dependency on ContactsResource, then ContactsResource isn't instantiated, until say a different controller,
     that has a dependency on it is loaded. Basically Service's are lazy instantiated.
-
  */
