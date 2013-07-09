@@ -13,32 +13,68 @@
 </head>
 <body>
 
-
 <!-- can use: "data-template-name" or "id" both work in this case-->
 <script type="text/x-handlebars" id="index">
   <div class="row">
     <div class="span3" >
-      <h1>{{ title }}</h1>
-      <button class="btn">New Contact</button>
+      <h1>{{ view.title }}</h1>
+      {{#linkTo 'index.new'}}<button class="btn">New Contact</button>{{/linkTo }}
       <input type="text">
       <ul class="nav nav-tabs nav-stacked">
-        {{#each controller }}
+        {{#each contact in filteredContent }}
             <li>
-              <a href="">{{lastName}}, {{firstName}}</a>
+              {{#linkTo 'index.view' contact }}{{contact.lastName}}, {{contact.firstName}}{{/linkTo}}
             </li>
         {{/each }}
       </ul>
     </div>
     <div class="span9">
+      {{ outlet }}
     </div>
   </div>
 </script>
 
+<script type="text/x-handlebars" data-template-name="index/blank">
+   There aint nothing here
+</script>
+
+<script type="text/x-handlebars" id="index/edit">
+  <h1>{{ view.name }}</h1>
+  <label>First Name</label>
+  {{view Ember.TextField valueBinding="firstName" }}
+  <label>Last Name</label>
+  {{view Ember.TextField valueBinding="lastName" }}
+  <label>Type</label>
+  {{view Ember.TextField valueBinding="contactType" }}
+  <label>Age</label>
+  {{view Ember.TextField valueBinding="age" }}
+  <label>Active</label>
+  {{view Ember.Checkbox checkedBinding="active"}}
+  <hr>
+  <button class="btn btn-primary" {{action 'save' }}>{{ view.saveBtnName }}</button>
+  {{#linkTo 'index.view' model }}Cancel{{/linkTo }}
+</script>
+
+<script type="text/x-handlebars" id="index/view" >
+  <h4>{{ lastName }}, {{ firstName }}</h4>
+  <p>Age: {{ age}}</p>
+  <p>Type: {{ contactType}}</p>
+  <p>Active: {{ active }}</p>
+  {{#linkTo 'index.edit' model }}Edit{{/linkTo }}
+  <a href="">Delete</a>
+</script>
+
+
 <script type="text/javascript">
     var App = Ember.Application.create();
 
-    // Rails default scaffolded json doesn't return obj's in the correct format. But using
-    // ember.js
+    /**********************
+     * Stores
+     *********************/
+
+
+        // Rails default scaffolded json doesn't return obj's in the correct format. But using
+        // ember.js
     DS.RESTAdapter.configure("plurals", {
         contact: "contacts2"
     });
@@ -53,8 +89,21 @@
         age: DS.attr('number')
     });
 
+
+    /**********************
+     * Routes
+     *********************/
+
+
     // not necessary code. If things aren't defined then ember will auto generate it for you
-    App.Router.map(function() {});
+    // necessary now... since its a bit more complicated.
+    App.Router.map(function() {
+        this.resource("index", { path: "/" }, function() {
+            this.route("new");
+            this.route('edit', { path: '/edit/:contact_id' });
+            this.route('view', {path: '/:contact_id'});
+        });
+    });
 
     App.IndexRoute = Ember.Route.extend({
         model: function() {
@@ -62,31 +111,110 @@
         }
     });
 
-    App.IndexController = Ember.ArrayController.extend({
-
+    App.IndexViewRoute = Ember.Route.extend({
+        model: function(params) {
+            return App.Contact.find(params.contact_id);
+        }
     });
 
-    // use this function to execute some code immediately after the Ember app loads.
+    App.IndexNewRoute = Ember.Route.extend({
+        model: function() {
+            return App.Contact.createRecord();
+        }
+    });
+
+    App.IndexEditRoute = Ember.Route.extend({
+        model: function(params) {
+            return App.Contact.find(params.contact_id);
+        }
+    });
+
+    /**********************
+     * Controllers
+     *********************/
+
+
+    App.IndexController = Ember.ArrayController.extend({
+        sortProperties: ['lastName'],
+        sortAscending: true,
+        filteredContent: (function() {
+            var content = this.get('arrangedContent');
+            return content.filter(function(item, index) {
+                return !(item.get('isDirty'));
+            });
+        }).property('content.@each')
+    });
+
+    App.IndexViewController = Ember.ObjectController.extend();
+
+    App.IndexNewController = Ember.ObjectController.extend({
+        save: function() {
+            console.log('added!');
+            //console.log(arguments);
+            //console.log(this);
+            //this.get("model.transaction").commit();
+            //this.get('target').transitionTo('index');
+            var model = this.get('model');
+            console.log(model);
+        }
+    });
+
+    App.IndexEditController = Ember.ObjectController.extend({
+        save: function() {
+            console.log("updated!");
+        }
+    });
+
+    /**********************
+     * Views
+     *********************/
+
+    App.IndexView = Ember.View.extend({
+        title: "Contacts App"
+    });
+
+    App.IndexNewView = Ember.View.extend({
+        templateName: "index/edit",
+        name: "New Contact",
+        saveBtnName: "Add"
+    });
+
+    App.IndexEditView = Ember.View.extend({
+        templateName: "index/edit",
+        name: "Edit Contact",
+        saveBtnName: "Save"
+    });
+
+
+
+    /**********************
+     * Other Crap
+     *********************/
+
+
+        // not sure relevant stuff down here:
+        // use this function to execute some code immediately after the Ember app loads.
+
     App.then(function() {
         console.log("App - initialized");
         var contacts = App.Contact.find();
         window.contacts = contacts;
+        window.contactStore = App.Contact;
         // this won't be an object until after the ajax call returns. contacts is a blank obj until then.
         console.log(contacts.objectAt(0));
     });
 
-
     var x = "";
 
-        /*
-        Notes:
+    /*
+     Notes:
 
-        Why you cant just call App.Contact.find() from the global scope
-         https://github.com/emberjs/ember.js/issues/2275
+     Why you cant just call App.Contact.find() from the global scope
+     https://github.com/emberjs/ember.js/issues/2275
 
-         http://emberjs.com/guides/models/the-rest-adapter/
-         Using the rest adapter you need to return the data in a certain form (not the default like in Rails
-         */
+     http://emberjs.com/guides/models/the-rest-adapter/
+     Using the rest adapter you need to return the data in a certain form (not the default like in Rails
+     */
 </script>
 </body>
 </html>
