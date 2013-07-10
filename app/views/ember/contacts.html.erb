@@ -16,8 +16,10 @@
 <!-- can use: "data-template-name" or "id" both work in this case-->
 <script type="text/x-handlebars" id="index">
   <div class="row">
+    <div class="span12"><h1>{{ view.title }}</h1></div>
+  </div>
+  <div class="row">
     <div class="span3" >
-      <h1>{{ view.title }}</h1>
       {{#linkTo 'index.new'}}<button class="btn">New Contact</button>{{/linkTo }}
       <input type="text">
       <ul class="nav nav-tabs nav-stacked">
@@ -52,7 +54,7 @@
   {{view Ember.Checkbox checkedBinding="active"}}
   <hr>
   <button class="btn btn-primary" {{action 'save' }}>{{ view.saveBtnName }}</button>
-  {{#linkTo 'index.view' model }}Cancel{{/linkTo }}
+  <a href='#' {{action 'cancel' }}>Cancel</a>
 </script>
 
 <script type="text/x-handlebars" id="index/view" >
@@ -61,7 +63,7 @@
   <p>Type: {{ contactType}}</p>
   <p>Active: {{ active }}</p>
   {{#linkTo 'index.edit' model }}Edit{{/linkTo }}
-  <a href="">Delete</a>
+  <a href='#'>Delete</a>
 </script>
 
 
@@ -150,18 +152,24 @@
     App.IndexNewController = Ember.ObjectController.extend({
         save: function() {
             console.log('added!');
-            //console.log(arguments);
-            //console.log(this);
-            //this.get("model.transaction").commit();
-            //this.get('target').transitionTo('index');
-            var model = this.get('model');
-            console.log(model);
+            this.get("model").transaction.commit();
+            this.get('target').transitionTo('index');
+        },
+        cancel: function() {
+            console.log('cancel');
+            this.get('target').transitionTo('index');
         }
     });
 
     App.IndexEditController = Ember.ObjectController.extend({
         save: function() {
             console.log("updated!");
+            this.get("model").transaction.commit();
+            this.transitionToRoute('index.view', this.get('model'));
+        },
+        cancel: function() {
+            this.get('model').transaction.rollback();
+            this.transitionToRoute('index.view', this.get('model'));
         }
     });
 
