@@ -1,4 +1,5 @@
 
+
 //var app = angular.module('contacts', ['ngResource']);
 //app.factory('contactFactory', function($resource) {
 //    window.Contacts = $resource('/contacts/');
@@ -19,284 +20,307 @@
 //        $scope.title = "a title";
 //    });
 
+(function() {
+    "use strict";
+    /*global angular, console, _, confirm, toastr */
 
-/*
-ajax loading module.
- */
-var ajaxLoading = angular.module('ajaxLoading', []);
-ajaxLoading.config(function($httpProvider) {
-    $httpProvider.responseInterceptors.push('myHttpInterceptor');
-});
-ajaxLoading.run(function($http, $rootScope) {
-    // if you set the templateUrl as a local template on the page, the $http service
-    // still registers it as an an ajax call. so have to account for that.
-    //http://jsfiddle.net/dBR2r/©/
-    //https://groups.google.com/forum/#!topic/angular/BbZ7lQgd1GI
+    /***********************
+     * ajax loading module.
+     ***********************/
 
-    //set up http request counts
-    $rootScope.ajaxLoading = {
-        count: 0
-    };
-    $rootScope.ajaxLoading.show = function() {
-        return $rootScope.ajaxLoading.count > 0;
-    };
+    var ajaxLoading = angular.module('ajaxLoading', []);
+    ajaxLoading.config(function($httpProvider) {
+        $httpProvider.responseInterceptors.push('myHttpInterceptor');
+    });
+    ajaxLoading.run(function($http, $rootScope) {
+        // if you set the templateUrl as a local template on the page, the $http service
+        // still registers it as an an ajax call. so have to account for that.
+        //http://jsfiddle.net/dBR2r/©/
+        //https://groups.google.com/forum/#!topic/angular/BbZ7lQgd1GI
 
-    var spinnerFunction = function (data) {
-        $rootScope.ajaxLoading.count++;
-        return data;
-    };
-    $http.defaults.transformRequest.push(spinnerFunction);
-});
+        //set up http request counts
+        $rootScope.ajaxLoading = {
+            count: 0
+        };
+        $rootScope.ajaxLoading.show = function() {
+            return $rootScope.ajaxLoading.count > 0;
+        };
 
-
-// register the interceptor as a service, intercepts ALL angular ajax http calls
-ajaxLoading.factory('myHttpInterceptor', function ($q, $rootScope) {
-    return function (promise) {
-        return promise.then(function (response) {
-            $rootScope.ajaxLoading.count--;
-            return response;
-
-        }, function (response) {
-            $rootScope.ajaxLoading.count--;
-            return $q.reject(response);
-        });
-    };
-});
+        var spinnerFunction = function (data) {
+            $rootScope.ajaxLoading.count++;
+            return data;
+        };
+        $http.defaults.transformRequest.push(spinnerFunction);
+    });
 
 
-var app = angular.module('ContactsApp', ['ajaxLoading', 'ngResource']);
 
-app.config(function($routeProvider) {
-    $routeProvider
-        .when('/', {
-            templateUrl: "blankTemplate"
-        })
-        .when('/new', {
-            templateUrl: 'editTemplate',
-            controller: 'ContactsNewCtrl'
-        })
-        .when('/:id', {
-            templateUrl: 'viewTemplate',
-            controller: 'ContactsViewCtrl'
-        })
-        .when('/:id/edit', {
-            templateUrl: 'editTemplate',
-            controller: 'ContactsEditCtrl'
-        });
-});
 
-// Flash service requires toastr.
+    // register the interceptor as a service, intercepts ALL angular ajax http calls
+    ajaxLoading.factory('myHttpInterceptor', function ($q, $rootScope) {
+        return function (promise) {
+            return promise.then(function (response) {
+                $rootScope.ajaxLoading.count--;
+                return response;
 
-app.factory('FlashService', function($rootScope) {
-    var queue =[], currentMessage = {};
-    var obj = {
-        set: function(message) {
-        queue.push(message);
-    },
-        get: function(message) {
-        return currentMessage;
-    },
-        pop: function(message) {
-            //toastr types are 'success', 'info', 'warning', 'error'
-            if(currentMessage.body) {
-                toastr[message.type](message.body, message.title);
+            }, function (response) {
+                $rootScope.ajaxLoading.count--;
+                return $q.reject(response);
+            });
+        };
+    });
+
+    /***********************
+     * custom filter module
+     ***********************/
+
+
+    var customFilters = angular.module('customFilters', []);
+
+    customFilters.filter('displayBool', function() {
+        return function(input) {
+            return input ? "ACTIVE" : "INACTIVE" ;
+        };
+    });
+
+    /***********************
+     * THE APP
+     ***********************/
+
+
+    var app = angular.module('ContactsApp', ['ajaxLoading', 'ngResource', 'customFilters']);
+
+    app.config(function($routeProvider) {
+        $routeProvider
+            .when('/', {
+                templateUrl: "blankTemplate"
+            })
+            .when('/new', {
+                templateUrl: 'editTemplate',
+                controller: 'ContactsNewCtrl'
+            })
+            .when('/:id', {
+                templateUrl: 'viewTemplate',
+                controller: 'ContactsViewCtrl'
+            })
+            .when('/:id/edit', {
+                templateUrl: 'editTemplate',
+                controller: 'ContactsEditCtrl'
+            });
+    });
+
+    // Flash service requires toastr.
+    app.factory('FlashService', function($rootScope) {
+        var queue =[], currentMessage = {};
+        var obj = {
+            set: function(message) {
+                queue.push(message);
+            },
+            get: function(message) {
+                return currentMessage;
+            },
+            pop: function(message) {
+                //toastr types are 'success', 'info', 'warning', 'error'
+                if(currentMessage.body) {
+                    toastr[message.type](message.body, message.title);
+                }
             }
-        }
-    };
+        };
 
-    $rootScope.$on('$routeChangeSuccess', function() {
-        currentMessage = queue.length > 0 ? queue.shift() : {};
-        obj.pop(currentMessage);
-    });
-    return obj;
-});
-
-
-app.factory('ContactResource', function($resource) {
-   var ContactResource = $resource('/contacts/:id', {id: '@id'}, {update: {method: 'PUT'}});
-    return ContactResource;
-});
-
-app.factory('ContactService', function($q, ContactResource, FlashService){
-    console.log('contact Service loaded');
-
-
-    var deferred = $q.defer(),
-        promise = deferred.promise;
-
-
-    var contacts = ContactResource.query(function() {
-        deferred.resolve(contacts);
+        $rootScope.$on('$routeChangeSuccess', function() {
+            currentMessage = queue.length > 0 ? queue.shift() : {};
+            obj.pop(currentMessage);
+        });
+        return obj;
     });
 
-    return {
-        getAll: function() {
-            return promise;
-        },
 
-        get: function(id) {
-            return promise.then (function(contacts) {
-                return _.find(contacts, function(elem) {
-                    return elem.id === id;
+    app.factory('ContactResource', function($resource) {
+        var ContactResource = $resource('/contacts/:id', {id: '@id'}, {update: {method: 'PUT'}});
+        return ContactResource;
+    });
+
+    app.factory('ContactService', function($q, ContactResource, FlashService){
+        console.log('contact Service loaded');
+
+        var deferred = $q.defer(),
+            promise = deferred.promise;
+
+
+        var contacts = ContactResource.query(function() {
+            deferred.resolve(contacts);
+        });
+
+        return {
+            getAll: function() {
+                return promise;
+            },
+
+            get: function(id) {
+                return promise.then (function(contacts) {
+                    return _.find(contacts, function(elem) {
+                        return elem.id === id;
+                    });
                 });
-            });
-        },
+            },
 
-        new: function() {
-            return new ContactResource();
-        },
+            new: function() {
+                return new ContactResource();
+            },
 
-        save: function(contact) {
-            var deferred = $q.defer();
+            save: function(contact) {
+                var deferred = $q.defer();
 
-            contact.$save(function(data) {
-                contacts.push(data);
-                deferred.resolve(data);
-            });
-            FlashService.set({
-                type: 'success',
-                body: 'contact was created!'
-            });
-            return deferred.promise;
-        },
-
-        update: function(contact) {
-            var deferred = $q.defer();
-
-            contact.$update(function(data) {
-                var toUpdate = _.find(contacts, function(elem) {
-                    return elem.id === data.id;
+                contact.$save(function(data) {
+                    contacts.push(data);
+                    deferred.resolve(data);
                 });
-                angular.copy(data, toUpdate);
                 FlashService.set({
                     type: 'success',
-                    body: 'contact was updated!'
+                    body: 'contact was created!'
                 });
-                deferred.resolve(data);
+                return deferred.promise;
+            },
 
-            });
-            return deferred.promise;
-        },
+            update: function(contact) {
+                var deferred = $q.defer();
 
-        delete: function(contact) {
-            var deferred = $q.defer();
+                contact.$update(function(data) {
+                    var toUpdate = _.find(contacts, function(elem) {
+                        return elem.id === data.id;
+                    });
+                    angular.copy(data, toUpdate);
+                    FlashService.set({
+                        type: 'success',
+                        body: 'contact was updated!'
+                    });
+                    deferred.resolve(data);
 
-            contact.$remove(function(data) {
-                // remove item from object
-                var objIndex = -1;
-                for(var i = 0; i < contacts.length; i++) {
-                    if(contacts[i].id === contact.id) {
-                        objIndex = i;
-                        break;
+                });
+                return deferred.promise;
+            },
+
+            delete: function(contact) {
+                var deferred = $q.defer();
+
+                contact.$remove(function(data) {
+                    // remove item from object
+                    var objIndex = -1;
+                    for(var i = 0; i < contacts.length; i++) {
+                        if(contacts[i].id === contact.id) {
+                            objIndex = i;
+                            break;
+                        }
                     }
-                }
-                if(objIndex >= 0) {
-                    contacts.splice(objIndex, 1);
-                }
+                    if(objIndex >= 0) {
+                        contacts.splice(objIndex, 1);
+                    }
 
-                FlashService.set({
-                    type: 'success',
-                    body: 'contact was deleted!'
+                    FlashService.set({
+                        type: 'success',
+                        body: 'contact was deleted!'
+                    });
+                    deferred.resolve(data);
                 });
-                deferred.resolve(data);
-            });
-            return deferred.promise;
-        }
-    }
-});
-
-
-app.controller('ContactsCtrl', function($scope, $location, ContactService) {
-
-    $scope.query = {};
-    $scope.query.input = "";
-    $scope.title = "Contacts";
-
-    var promise = ContactService.getAll();
-    promise.then(function(contacts) {
-        $scope.contacts = contacts;
+                return deferred.promise;
+            }
+        };
     });
 
-    $scope.search = function (item){
-        var firstName = item.first_name ? item.first_name : "",
-            lastName = item.last_name ? item.last_name : "";
 
-        if(firstName.indexOf($scope.query.input)!=-1 || lastName.indexOf($scope.query.input)!=-1) {
-            return true;
-        }
-        return false;
-    };
+    app.controller('ContactsCtrl', function($scope, $location, ContactService) {
 
-    $scope.new = function() {
-        $location.path('/new');
-    };
+        $scope.query = {};
+        $scope.query.input = "";
+        $scope.title = "Contacts";
 
-    $scope.view = function(contact) {
-        var path = '/' + contact.id;
-        $location.path(path);
-    };
-});
+        var promise = ContactService.getAll();
+        promise.then(function(contacts) {
+            $scope.contacts = contacts;
+        });
 
+        $scope.search = function (item){
+            var firstName = item.first_name ? item.first_name : "",
+                lastName = item.last_name ? item.last_name : "";
 
-app.controller('ContactsViewCtrl', function($scope, $location, $routeParams, ContactService) {
-    var id = parseInt($routeParams.id);
+            if(firstName.indexOf($scope.query.input)!==-1 || lastName.indexOf($scope.query.input)!==-1) {
+                return true;
+            }
+            return false;
+        };
 
-    var promise =  ContactService.get(id);
-    promise.then(function(contact) {
-        if(contact) {
-            $scope.contact = contact;
-        }
-        else {
-            $location.path('/');
-        }
+        $scope.new = function() {
+            $location.path('/new');
+        };
+
+        $scope.view = function(contact) {
+            var path = '/' + contact.id;
+            $location.path(path);
+        };
     });
 
-    $scope.delete = function() {
-        if(confirm("Are you sure you want to delete this contact?")) {
-            var promise = ContactService.delete($scope.contact);
-            promise.then(function(contact) {
+
+    app.controller('ContactsViewCtrl', function($scope, $location, $routeParams, ContactService) {
+        var id = parseInt($routeParams.id, 10);
+
+        var promise =  ContactService.get(id);
+        promise.then(function(contact) {
+            if(contact) {
+                $scope.contact = contact;
+            }
+            else {
                 $location.path('/');
-            });
-        }
-    }
-});
-
-
-app.controller('ContactsNewCtrl', function($scope, $location, ContactService) {
-    $scope.props = {};
-    $scope.props.title = "New Contact";
-    $scope.props.saveBtnName = "Create";
-
-    $scope.contact = ContactService.new();
-
-    $scope.save = function() {
-        var promise = ContactService.save($scope.contact);
-        promise.then(function(contact) {
-            $location.path('/' + contact.id);
+            }
         });
-    }
-});
 
-
-app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, ContactService) {
-    var id = parseInt($routeParams.id);
-    $scope.props = {};
-    $scope.props.title = "Edit Contact";
-    $scope.props.saveBtnName = "Update";
-    $scope.contact = ContactService.new();
-
-    var promise =  ContactService.get(id);
-    promise.then(function(contact) {
-        angular.copy(contact, $scope.contact);
+        $scope.delete = function() {
+            if(confirm("Are you sure you want to delete this contact?")) {
+                var promise = ContactService.delete($scope.contact);
+                promise.then(function(contact) {
+                    $location.path('/');
+                });
+            }
+        };
     });
 
-    $scope.save = function() {
-        var promise = ContactService.update($scope.contact);
+
+    app.controller('ContactsNewCtrl', function($scope, $location, ContactService) {
+        $scope.props = {};
+        $scope.props.title = "New Contact";
+        $scope.props.saveBtnName = "Create";
+
+        $scope.contact = ContactService.new();
+
+        $scope.save = function() {
+            var promise = ContactService.save($scope.contact);
+            promise.then(function(contact) {
+                $location.path('/' + contact.id);
+            });
+        };
+    });
+
+
+    app.controller('ContactsEditCtrl', function($scope, $location, $routeParams, ContactService) {
+        var id = parseInt($routeParams.id, 10);
+        $scope.props = {};
+        $scope.props.title = "Edit Contact";
+        $scope.props.saveBtnName = "Update";
+        $scope.contact = ContactService.new();
+
+        var promise =  ContactService.get(id);
         promise.then(function(contact) {
-            $location.path('/' + contact.id);
+            angular.copy(contact, $scope.contact);
         });
-    }
-});
+
+        $scope.save = function() {
+            var promise = ContactService.update($scope.contact);
+            promise.then(function(contact) {
+                $location.path('/' + contact.id);
+            });
+        };
+    });
+
+})();
 
 
 

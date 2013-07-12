@@ -59,6 +59,7 @@
   <h4>{{contact.last_name}}, {{contact.first_name}}</h4>
   <p>Age: {{contact.age}}</p>
   <p>Type: {{contact.contact_type}}</p>
+  <p>Active: {{ contact.active | displayBool }}</p>
   <a ng-href='#/{{contact.id}}/edit'>Edit</a>
   <a href="" ng-click="delete()">Delete</a>
 </script>
